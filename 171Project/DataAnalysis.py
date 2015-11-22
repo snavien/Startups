@@ -1,9 +1,11 @@
 import csv
 import Helpers
 import numpy as np
+import pandas as pd
 from random import shuffle
+from sklearn.naive_bayes import GaussianNB
 
-def main():
+def getData():
     # initialize parallel arrays
     name = []
     market = []
@@ -82,4 +84,36 @@ def main():
         testY.append(status[elementIdx])
         dataIdx = dataIdx + 1
 
-main()
+    return X, Y, testX, testY
+
+X, Y, testX, testY = getData()
+
+clf = GaussianNB()
+clf.fit(X, Y)
+
+compare = []
+predictedOutput = []
+total = 0.0;
+
+for i in range(len(testX)):
+    #print([testX[1]])
+    #input()
+    predictedOutput.append(clf.predict([testX[i]]))
+    if predictedOutput[i] == testY[i]:
+        compare.append(1)
+        total = total + 1.0
+    else:
+        compare.append(0)
+
+dfCompare = pd.DataFrame(compare)
+dfPredictedOutput = pd.DataFrame(predictedOutput)
+
+print("Output from Naive Bayes:")
+print(dfPredictedOutput)
+
+print('\n')
+print("Comparing output to actual data: 0 = wrong prediction, 1 = correct prediction")
+print(dfCompare)
+
+print("percentage of accuracy: # correct / total")
+print(total / len(testX))
