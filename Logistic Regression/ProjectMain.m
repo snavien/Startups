@@ -1,12 +1,12 @@
+rng(42);
 raw_data = read_file('myFinalData.csv');
 
 [ sorted ] = SortData(raw_data(2:end,:));
 
-input = [sorted(:, 1:3) sorted(:,5:10)];
+input = [sorted(:, 2:3) sorted(:,5:10)];
 output = sorted(:,4);
 
 [training_in, training_out, testing_in, testing_out] = DataSets(input, output);
-rng('default');
 
 % NON REGULARIZED
 mdl = fitglm(training_in, training_out, 'Distribution', 'binomial');
