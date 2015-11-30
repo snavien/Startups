@@ -1,9 +1,10 @@
-from pyspark.mllib.classification import SVMWithSGD, SVMModel
+from pyspark.mllib.classification import SVMWithSGD
 from pyspark.mllib.regression import LabeledPoint
 from pyspark import SparkConf, SparkContext
-from numpy.random import randint
+from random import randint
+from sklearn.metrics import roc_curve, auc
+import matplotlib.pyplot as plt
 
-#sc = SparkContext("local", "SVM App", pyFiles=['dataLibSVM.txt'])
 conf = (SparkConf()
         .setMaster("local")
         .setAppName("SVM App")
@@ -29,12 +30,37 @@ def run_iterations(parsedData, iter, seed):
     # Evaluating the model on training data
     labelsAndPreds = trainingData.map(lambda p: (p.label, model.predict(p.features)))
     trainErr = labelsAndPreds.filter(lambda (v, p): v != p).count() / float(trainingData.count())
+    MSE = labelsAndPreds.map(lambda(v,p): (v-p)**2).reduce(lambda x, y: x + y)/labelsAndPreds.count()
     print("Training Error = " + str(trainErr))
+    print("MSE = " + str(MSE))
 
     labelsAndPreds = testingData.map(lambda p: (p.label, model.predict(p.features)))
     testErr = labelsAndPreds.filter(lambda (v, p): v != p).count() / float(testingData.count())
-
+    MSE = labelsAndPreds.map(lambda(v,p): (v-p)**2).reduce(lambda x, y: x + y)/labelsAndPreds.count()
     print("Testing Error = " + str(testErr))
+    print("MSE = " + str(MSE))
 
-for iter in [100, 1000, 10000]:
+
+
+    info = labelsAndPreds.collect()
+    actual = [i[0] for i in info]
+    predictions = [i[1] for i in info]
+
+    false_positive_rate, true_positive_rate, thresholds = roc_curve(actual, predictions)
+    roc_auc = auc(false_positive_rate, true_positive_rate)
+
+    plt.title('Receiver Operating Characteristic')
+    plt.plot(false_positive_rate, true_positive_rate, 'b',
+    label='AUC = %0.2f'% roc_auc)
+    plt.legend(loc='lower right')
+    plt.plot([0,1],[0,1],'r--')
+    plt.xlim([-0.1,1.2])
+    plt.ylim([-0.1,1.2])
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.show()
+
+
+for iter in [10000]:
     run_iterations(parsedData, iter, randint(1, 9999))
+
